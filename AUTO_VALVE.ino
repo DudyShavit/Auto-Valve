@@ -112,7 +112,7 @@ void loop() {
     int currentHour = now.hour();
     int currentMinute = now.minute();
     //int modulo = currentMinute % 3;
-    if (currentHour == 23 && currentMinute >= 9 && currentMinute < 20) 
+    if (currentHour == 5 && currentMinute >= 17 && currentMinute < 19) 
     {
       OpenValve();
       State = Timer_Running;
@@ -181,17 +181,20 @@ void loop() {
     delay(500);
     unsigned long CurrentTime = millis();
 
-      //Serial.print("CurrentTime = ");
-      //Serial.println(CurrentTime);
-      //Serial.print("StartTime = ");
-      //Serial.println(StartTime);
-   // Serial.println("CurrentTime = %d", CurrentTime);
-   // Serial.println("StartTime = %d", StartTime);
+    Serial.print("CurrentTime = ");
+    Serial.println(CurrentTime);
+    Serial.print("StartTime = ");
+    Serial.println(StartTime);
     unsigned long Diff = CurrentTime - StartTime;
-    //Serial.print("Diff = ");
-      //Serial.println(Diff);
-//    Serial.println("CurrentTime - StartTime = %d", Diff);
-    MeasureFlowRate();
+    Serial.print("Diff = ");
+    Serial.println(Diff);
+    int FlowRateMilli = MeasureFlowRate();
+    while (FlowRateMilli == 0)
+    {
+      OpenValve();
+      FlowRateMilli = MeasureFlowRate();
+    }
+    
     if (Diff > TIMER_PERIOD)
     {
       Serial.println("Timer_Timeout");
@@ -207,27 +210,6 @@ void loop() {
 
   }
 }   
-    
-/*
-    case Program_Start:
-
-    isProgramStart = true;
-    
-    digitalWrite(programLedPin, LOW);
-    delay(500);
-    digitalWrite(programLedPin, HIGH);
-    delay(500);
-
-    DateTime now = rtc_millis.now();
-    int currentHour = now.hour();
-    int currentMinute = now.minute();
-    if (currentHour > 6 && currentHour < 7 && currentMinute > 0 && currentMinute < 10) 
-    {
-      State = Timer_Running;
-    }
-    break;
-  */  
-  
 
 
   void OpenValve()
@@ -291,7 +273,7 @@ void InitFlowRateSensor()
   // state to LOW state)
   attachInterrupt(sensorInterrupt, pulseCounter, FALLING);
 }
-void MeasureFlowRate()
+int MeasureFlowRate()
 {
    if((millis() - oldTime) > 1000)    // Only process counters once per second
   { 
@@ -320,16 +302,18 @@ void MeasureFlowRate()
     // Add the millilitres passed in this second to the cumulative total
     totalMilliLitres += flowMilliLitres;
       
-    PrintFlowRateMeasure();
+    int currentflow = PrintFlowRateMeasure();
 
     // Reset the pulse counter so we can start incrementing again
     pulseCount = 0;
     
     // Enable the interrupt again now that we've finished sending output
     attachInterrupt(sensorInterrupt, pulseCounter, FALLING);
+
+    return currentflow;
   }
 }
-void PrintFlowRateMeasure()
+int PrintFlowRateMeasure()
 {
   
  unsigned int frac;
@@ -350,6 +334,8 @@ void PrintFlowRateMeasure()
     // Print the cumulative total of litres flowed since starting
     Serial.print("  Output Liquid Quantity: ");             // Output separator
     Serial.print(totalMilliLitres);
-    Serial.println("mL"); 
+    Serial.println("mL");
+
+     return flowMilliLitres;
 }
   
