@@ -9,15 +9,23 @@ char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursd
 
 // constants won't change. They're used here to
 // set pin numbers:
-const int buttonPin = 12;     // the number of the pushbutton pin
+/*const int buttonPin = 12;     // the number of the pushbutton pin
 const int ledPin =  11;      // the number of the LED pin
-
 const int programButtonPin = 8;     // the number of the pushbutton pin
 const int programLedPin =  7;      // the number of the LED pin
-
-
 const int relay1Pin = 3;
 const int relay2_3Pin = 4;
+*/
+
+const int motorTerminal1 = 3; // Digital Pin 3 connects to motor terminal 1
+const int motorTerminal2 = 4; // Digital Pin 4 connects to motor terminal 2
+const int enablePin = 9; // Digital pin 9 connects to the enable pin 
+const int CloseSwitch = 11; // Digital pin 9 connects to the enable pin 
+const int OpenSwitch = 12; // Digital pin 9 connects to the enable pin 
+const int CloseLed = 6; // Digital pin 9 connects to the enable pin 
+const int OpenLed = 5; // Digital pin 9 connects to the enable pin 
+
+
 const unsigned long TIMER_PERIOD = 1800000;
 unsigned long StartTime = 0;
 bool isProgramStart = false;
@@ -56,7 +64,7 @@ void pulseCounter()
 
 
 void setup() 
-{
+{  
   Serial.begin(38400);
    if (! rtc_1307.begin()) 
    {
@@ -70,7 +78,9 @@ void setup()
       // following line sets the RTC to the date & time this sketch was compiled
       rtc_1307.adjust(DateTime(F(__DATE__), F(__TIME__)));
   }
-  
+ pinMode(CloseSwitch, INPUT_PULLUP); //the toggle switch functions as an input 
+  pinMode(OpenSwitch, INPUT_PULLUP); //the toggle switch functions as an input 
+  /* 
   // initialize the LED pin as an output:
   pinMode(ledPin, OUTPUT);
   pinMode(programLedPin, OUTPUT);
@@ -79,7 +89,7 @@ void setup()
   // initialize the pushbutton pin as an input:
   pinMode(buttonPin, INPUT_PULLUP);
   pinMode(programButtonPin, INPUT_PULLUP);
-
+*/
   InitFlowRateSensor();
   
 }
@@ -214,19 +224,20 @@ void loop() {
 
   void OpenValve()
   {
-    Serial.println("Open_Valve");
-    digitalWrite(relay1Pin, HIGH);
-    digitalWrite(relay2_3Pin, HIGH);
-    delay(25);
-    digitalWrite(relay1Pin, LOW);
+    digitalWrite(enablePin, HIGH);
+    digitalWrite(motorTerminal1, HIGH); // these logic levels create reverse direction
+    digitalWrite(motorTerminal2, LOW); 
+    delay(20);
+    digitalWrite(enablePin, LOW);
   }
   void CloseValve()
   {
     Serial.println("Close_Valve");
-    digitalWrite(relay1Pin, HIGH);
-    digitalWrite(relay2_3Pin, LOW);
-    delay(25);
-    digitalWrite(relay1Pin, LOW);   
+    digitalWrite(enablePin, HIGH);
+    digitalWrite(motorTerminal1, LOW); //these logic levels create forward direction
+    digitalWrite(motorTerminal2, HIGH); 
+    delay(20);
+    digitalWrite(enablePin, LOW);   
   }
 
   void SyncSoftwareRTC()
