@@ -26,7 +26,7 @@ const int CloseLed = 6; // Digital pin 9 connects to the enable pin
 const int OpenLed = 5; // Digital pin 9 connects to the enable pin 
 
 
-const unsigned long TIMER_PERIOD = 1800000;
+const unsigned long TIMER_PERIOD = 600000;
 unsigned long StartTime = 0;
 bool isProgramStart = false;
 char BT_data = 0; //Variable for storing received data
@@ -56,6 +56,20 @@ byte sensorPin       = 2;
 unsigned long oldTime;
 volatile byte pulseCount;  
 
+
+const int ledPin =  LED_BUILTIN;// the number of the LED pin
+
+// Variables will change:
+int ledState = LOW;             // ledState used to set the LED
+
+// Generally, you should use "unsigned long" for variables that hold time
+// The value will quickly become too large for an int to store
+unsigned long previousMillis = 0;        // will store last time LED was updated
+
+// constants won't change:
+const long interval = 500;
+
+
 void pulseCounter()
 {
   // Increment the pulse counter
@@ -78,8 +92,13 @@ void setup()
       // following line sets the RTC to the date & time this sketch was compiled
       rtc_1307.adjust(DateTime(F(__DATE__), F(__TIME__)));
   }
- pinMode(CloseSwitch, INPUT_PULLUP); //the toggle switch functions as an input 
-  pinMode(OpenSwitch, INPUT_PULLUP); //the toggle switch functions as an input 
+
+    pinMode(motorTerminal1, OUTPUT);
+  pinMode(motorTerminal2, OUTPUT);
+  pinMode(enablePin, OUTPUT);
+  pinMode(ledPin, OUTPUT);
+ //pinMode(CloseSwitch, INPUT_PULLUP); //the toggle switch functions as an input 
+ // pinMode(OpenSwitch, INPUT_PULLUP); //the toggle switch functions as an input 
   /* 
   // initialize the LED pin as an output:
   pinMode(ledPin, OUTPUT);
@@ -90,8 +109,8 @@ void setup()
   pinMode(buttonPin, INPUT_PULLUP);
   pinMode(programButtonPin, INPUT_PULLUP);
 */
-  InitFlowRateSensor();
-  
+  //InitFlowRateSensor();
+  SyncSoftwareRTC();
 }
 
 
@@ -101,70 +120,72 @@ void loop() {
     case Init:
     {
       Serial.println("INIT");
-      SyncSoftwareRTC();
       CloseValve();
-      State = Standby;
-      Serial.println("STANDBY");
+      State = Program_Start;      
     } 
     break;
    
    case Program_Start:
    {
     
-     isProgramStart = true;
+//     isProgramStart = true;
 
-    digitalWrite(programLedPin, LOW);
-    delay(500);
-    digitalWrite(programLedPin, HIGH);
-    delay(500);
+//    digitalWrite(programLedPin, LOW);
+//    delay(500);
+//    digitalWrite(programLedPin, HIGH);
+//    delay(500);
 
     DateTime now = rtc_millis.now();    
     int currentHour = now.hour();
     int currentMinute = now.minute();
+    int currentSecond = now.second();
     //int modulo = currentMinute % 3;
-    if (currentHour == 5 && currentMinute >= 17 && currentMinute < 19) 
+    if (currentHour == 5 && currentMinute == 40 && currentSecond >= 0 && currentSecond < 10) 
+    //if (currentSecond >= 0 && currentSecond < 5) 
     {
       OpenValve();
       State = Timer_Running;
       StartTime = millis();
-      //State = Timer_Running;
-      Serial.println("Timer_Running");
       PrintCurrentTime(rtc_millis.now());   
     }
    }
    break;
     
     case Standby:
-    digitalWrite(ledPin, HIGH);
-    digitalWrite(programLedPin, HIGH);
+    Serial.println("STANDBY");
+
+    delay(30000);
+    State = Init;
+//    digitalWrite(ledPin, HIGH);
+//    digitalWrite(programLedPin, HIGH);
     
     // read the state of the pushbutton value:
-    buttonState = digitalRead(buttonPin);
-    delay(150);
+    //buttonState = digitalRead(buttonPin);
+    //delay(150);
     // check if the pushbutton is pressed.
     // if it is, the buttonState is HIGH: 
-    if (buttonState == LOW) 
-    {
+    //if (buttonState == LOW) 
+    //{
       // turn VALVE on:
-      OpenValve();
-      State = Timer_Running;
-      StartTime = millis();
-      Serial.print("StartTime = ");
-      Serial.println(StartTime);
-      Serial.println("Timer_Running");  
-    }
+    //  OpenValve();
+    //  State = Timer_Running;
+    //  StartTime = millis();
+    //  Serial.print("StartTime = ");
+    //  Serial.println(StartTime);
+    //  Serial.println("Timer_Running");  
+   // }
 
     // read the state of the pushbutton value:
-    buttonState = digitalRead(programButtonPin);
-    delay(150);
+    //buttonState = digitalRead(programButtonPin);
+    //delay(150);
     // check if the pushbutton is pressed.
     // if it is, the buttonState is HIGH: 
-    if (buttonState == LOW) 
-    {
-      State = Program_Start;
-      Serial.println("Program_Start");  
-    }  
-
+    //if (buttonState == LOW) 
+    //{
+      //State = Program_Start;
+      //Serial.println("Program_Start");  
+    //}  
+/*
     if(Serial.available() > 0)  // Send data only when you receive data:
     {
       BT_data = Serial.read();        //Read the  incoming  data and store it into variable data
@@ -181,39 +202,52 @@ void loop() {
         Serial.println("Timer_Running");  
       }
    }
+   */
    break;
 
     case Timer_Running:
-    
-    digitalWrite(ledPin, LOW);
-    delay(500);
-    digitalWrite(ledPin, HIGH);
-    delay(500);
+
+     unsigned long currentMillis = millis();
+
+  if (currentMillis - previousMillis >= interval) {
+    // save the last time you blinked the LED
+    previousMillis = currentMillis;
+
+    // if the LED is off turn it on and vice-versa:
+    if (ledState == LOW) {
+      ledState = HIGH;
+      Serial.println("Timer_Running");
+    } else {
+      ledState = LOW;
+    }
+    // set the LED with the ledState of the variable:
+    digitalWrite(ledPin, ledState);
+  } 
     unsigned long CurrentTime = millis();
 
-    Serial.print("CurrentTime = ");
-    Serial.println(CurrentTime);
-    Serial.print("StartTime = ");
-    Serial.println(StartTime);
+    //Serial.print("CurrentTime = ");
+    //Serial.println(CurrentTime);
+    //Serial.print("StartTime = ");
+    //Serial.println(StartTime);
     unsigned long Diff = CurrentTime - StartTime;
-    Serial.print("Diff = ");
-    Serial.println(Diff);
-    int FlowRateMilli = MeasureFlowRate();
+    //Serial.print("Diff = ");
+    //Serial.println(Diff);
+    /*int FlowRateMilli = MeasureFlowRate();
     while (FlowRateMilli == 0)
     {
       OpenValve();
       FlowRateMilli = MeasureFlowRate();
     }
-    
+    */
     if (Diff > TIMER_PERIOD)
     {
       Serial.println("Timer_Timeout");
       PrintCurrentTime(rtc_millis.now());   
       CloseValve(); 
-      if (isProgramStart)
-        State = Program_Start;
-      else     
-        State = Standby;
+      //if (isProgramStart)
+      State = Program_Start;
+      //else     
+      //  State = Standby;
     }
     break;
 
@@ -222,17 +256,18 @@ void loop() {
 }   
 
 
-  void OpenValve()
+  void CloseValve()
   {
+    Serial.println("Close_Valve");
     digitalWrite(enablePin, HIGH);
     digitalWrite(motorTerminal1, HIGH); // these logic levels create reverse direction
     digitalWrite(motorTerminal2, LOW); 
     delay(20);
     digitalWrite(enablePin, LOW);
   }
-  void CloseValve()
+  void OpenValve()
   {
-    Serial.println("Close_Valve");
+    Serial.println("Open_Valve");
     digitalWrite(enablePin, HIGH);
     digitalWrite(motorTerminal1, LOW); //these logic levels create forward direction
     digitalWrite(motorTerminal2, HIGH); 
