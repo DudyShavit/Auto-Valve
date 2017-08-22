@@ -27,6 +27,7 @@ const int OpenLed = 5; // Digital pin 9 connects to the enable pin
 
 
 const unsigned long TIMER_PERIOD = 600000;
+//const unsigned long TIMER_PERIOD = 10000;
 unsigned long StartTime = 0;
 bool isProgramStart = false;
 char BT_data = 0; //Variable for storing received data
@@ -256,22 +257,23 @@ void loop() {
 }   
 
 
-  void CloseValve()
-  {
-    Serial.println("Close_Valve");
-    digitalWrite(enablePin, HIGH);
-    digitalWrite(motorTerminal1, HIGH); // these logic levels create reverse direction
-    digitalWrite(motorTerminal2, LOW); 
-    delay(20);
-    digitalWrite(enablePin, LOW);
-  }
   void OpenValve()
   {
     Serial.println("Open_Valve");
     digitalWrite(enablePin, HIGH);
+    digitalWrite(motorTerminal1, HIGH); // these logic levels create reverse direction
+    digitalWrite(motorTerminal2, LOW); 
+    //delayMicroseconds(900);
+    delay(80);
+    digitalWrite(enablePin, LOW);
+  }
+  void CloseValve()
+  {
+    Serial.println("Close_Valve");
+    digitalWrite(enablePin, HIGH);
     digitalWrite(motorTerminal1, LOW); //these logic levels create forward direction
     digitalWrite(motorTerminal2, HIGH); 
-    delay(20);
+    delay(120);
     digitalWrite(enablePin, LOW);   
   }
 
