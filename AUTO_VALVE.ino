@@ -1,6 +1,9 @@
 #include <Wire.h>
 #include "RTClib.h"
 
+#define debug_mode 0
+#define adjust_time 0
+
 RTC_DS1307 rtc_1307;
 RTC_Millis rtc_millis;
 
@@ -24,10 +27,7 @@ const int CloseSwitch = 11; // Digital pin 9 connects to the enable pin
 const int OpenSwitch = 12; // Digital pin 9 connects to the enable pin 
 const int CloseLed = 6; // Digital pin 9 connects to the enable pin 
 const int OpenLed = 5; // Digital pin 9 connects to the enable pin 
-
-
-const unsigned long TIMER_PERIOD = 600000;
-//const unsigned long TIMER_PERIOD = 10000;
+unsigned long TIMER_PERIOD = 0;
 unsigned long StartTime = 0;
 bool isProgramStart = false;
 char BT_data = 0; //Variable for storing received data
@@ -221,9 +221,23 @@ void setup()
       Serial.println("Couldn't find RTC");
       while (1);
    }
+  if (debug_mode)
+  {
+    Serial.println("DEBUG_MODE");
+    TIMER_PERIOD = 10000;
+  }
+  else
+    TIMER_PERIOD = 600000;
 
-   if (!rtc_1307.isrunning()) 
-   {
+  if (adjust_time)
+  {
+    Serial.println("ADJUST_TIME");
+    rtc_1307.adjust(DateTime(F(__DATE__), F(__TIME__)));
+  }
+   
+   
+  if (rtc_1307.isrunning() == false) 
+  {
       Serial.println("RTC is NOT running!");
       // following line sets the RTC to the date & time this sketch was compiled
       rtc_1307.adjust(DateTime(F(__DATE__), F(__TIME__)));
@@ -276,9 +290,10 @@ void loop() {
     int currentMinute = now.minute();
     int currentSecond = now.second();
     //int modulo = currentMinute % 3;
-    if (currentHour == 5 && currentMinute == 40 && currentSecond >= 0 && currentSecond < 10) 
-    //if (currentSecond >= 0 && currentSecond < 5) 
-    {
+
+  if ((debug_mode && (currentSecond >= 0 && currentSecond < 5)) || 
+       (currentHour == 5 && currentMinute == 40 && currentSecond >= 0 && currentSecond < 10))
+  {
       OpenValve();
       State = Timer_Running;
       StartTime = millis();
